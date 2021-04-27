@@ -231,21 +231,25 @@ void GCodeParser::parse(char *p) {
       break;
     #endif
 
-    #if ENABLED(REALTIME_REPORTING_COMMANDS)
-      case 'P': case 'R': {
-        if (letter == 'R') {
-          #if ENABLED(GCODE_MOTION_MODES)
-            if (ENABLED(ARC_SUPPORT) && !WITHIN(motion_mode_codenum, 2, 3)) return;
-          #endif
+    #if ENABLED(REALTIME_REPORTING_COMMANDS)||ENABLED(GCODE_MOTION_MODES)
+      case 'P': case 'R': case 'S': {
+        if (letter == 'R' or letter == 'P') {
+          if (letter == 'R') {
+            #if ENABLED(GCODE_MOTION_MODES)
+              if (ENABLED(ARC_SUPPORT) && !WITHIN(motion_mode_codenum, 2, 3)) return;
+            #endif
+          }
+          else if (TERN0(GCODE_MOTION_MODES, motion_mode_codenum != 5)) return;
         }
-        else if (TERN0(GCODE_MOTION_MODES, motion_mode_codenum != 5)) return;
-      } // fall-thru
-      case 'S': {
+        // If R000, P000 or S000
         codenum = 0;                  // The only valid codenum is 0
         uint8_t digits = 0;
         while (*p++ == '0') digits++; // Count up '0' characters
         command_letter = (digits == 3) ? letter : '?'; // Three '0' digits is a good command
-      } return;                       // No parameters needed, so return now
+        return; // No parameters needed, so return now
+
+      } 
+                         
     #endif
 
     default: return;
